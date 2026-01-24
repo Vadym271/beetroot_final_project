@@ -1,0 +1,13 @@
+Next to implement:
+1. Colissions
+2. Traces  DONE
+3. Planet interactions
+4. New star in system
+
+
+Two possile scenarios:
+1. Solar system + objects
+2. Arbitrary objects
+
+Necessary features:
+1. Ability to place and decide velocity of an object
