@@ -38,14 +38,10 @@ export function update_planets(ctx, planets, stars, colors, scaling_factor, dt){
 export function update_stars(ctx, stars, colors, scaling_factor, dt){
     if (stars.length > 1){
         stars.forEach((object, i) => {
-            const otherStars = stars.filter((_, index) => index !== i);
+            let otherStars = stars.filter((_, index) => index !== i);
             let [a, star_collided] = combined_force(object.get_pos_vector(), otherStars, scaling_factor);
             if (a == null){
                 [stars, colors] = collision_stars(object, star_collided, stars, colors);
-                var new_star_color = colors[i];
-                colors = colors.filter((_, index) => index !== i || stars[index] !== star_collided);
-                colors.push(new_star_color);
-
             } else {
                 object.upd_vel(a, dt);
                 object.upd_pos(dt);
@@ -105,7 +101,7 @@ function collision_stars(star1, star2, stars, colors){
     const idx1 = stars.indexOf(star1);
     const idx2 = stars.indexOf(star2);
     const indicesToRemove = [idx1, idx2];
-    const new_star_color = colors[idx1];
+    const new_star_color = colors[idx2];
 
     const M = star1.mass + star2.mass
     const p1 = star1.get_vel_vector().mul(star1.mass)
@@ -114,10 +110,10 @@ function collision_stars(star1, star2, stars, colors){
 
     const star = new StarTraced(star1.position, v, 1000, M)
 
-    const new_stars = stars.filter((_, index) => !indicesToRemove.includes(index));
-    const new_colors = colors.filter((_, index) => !indicesToRemove.includes(index));
-    stars = new_stars;
-    colors = new_colors;
+    const updatedStars = stars.filter((_, index) => !indicesToRemove.includes(index));
+    const updatedColors = colors.filter((_, index) => !indicesToRemove.includes(index));
+    stars = updatedStars;
+    colors = updatedColors;
 
     stars.push(star);
     colors.push(new_star_color);
