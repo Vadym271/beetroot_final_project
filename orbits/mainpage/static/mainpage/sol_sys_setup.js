@@ -6,7 +6,7 @@ export function inner_solar_system_setup(center, scaling_factor){
 
     const r_s = new Vector(center, center);
     const v_s = new Vector(0, 0);
-    const sun = new StarTraced(r_s, v_s, 1000, 1);
+    const sun = new StarTraced(r_s, v_s, 1000, 1, "Sun");
     sun.trace.update_trace(r_s.get_coordinates());
 
     var r_e = new Vector(0.387 * scaling_factor + center, center);
@@ -35,7 +35,8 @@ export function inner_solar_system_setup(center, scaling_factor){
     return [objects, colors_objects]
 }
 
-export function draw_setup(ctx, stars, colors_stars, planets, colors_planets){
+export function draw_setup(ctx, half_width, stars, colors_stars, planets, colors_planets){
+    ctx.clearRect(0, 0, half_width * 2, half_width * 2);
     planets.forEach((object, i) => {
         ctx.beginPath();
         ctx.fillStyle = colors_planets[i];

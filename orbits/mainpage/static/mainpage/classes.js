@@ -99,10 +99,11 @@ export class CelestialBodyTraced extends CelestialBody{
 }
 
 export class StarTraced extends CelestialBodyTraced{
-    constructor(r0, v0, limit, mass){
+    constructor(r0, v0, limit, mass, name){
         // mass is measured in solar masses
         super(r0, v0, limit);
         this.mass = mass
+        this.name = name
     }
 }
 

@@ -20,7 +20,7 @@
             import { Vector, CelestialBodyTraced, StarTraced, sun_force } from "{% static 'mainpage/classes.js' %}";
             import { update_planets, update_stars } from "{% static 'mainpage/move_funcs.js' %}";
             import { inner_solar_system_setup, draw_setup } from "{% static 'mainpage/sol_sys_setup.js' %}";
-            // import { draw_setup } from "{% static 'mainpage/ill_name_it_later.js' %}";
+            import { getCheckboxInfo, buildStarCheckboxes, getCheckboxStarInfo, updateDeleteMenu } from "{% static 'mainpage/html_logic.js' %}";
 
             const canvas = document.getElementById('circleCanvas');
             const ctx = canvas.getContext('2d');
@@ -32,34 +32,47 @@
             // setup
             var r_st = new Vector(1 * scaling_factor + center, 0);
             var v_st = new Vector(0.016 * scaling_factor / 4, 0.01728 * scaling_factor / 4);
-            const star1 = new StarTraced(r_st, v_st, 1000, 2);
+            const star1 = new StarTraced(r_st, v_st, 1000, 2, "star1");
             star1.trace.update_trace(r_st.get_coordinates());
 
             var r_st = new Vector( - 1 * scaling_factor + 2* center, 2 * center);
             var v_st = new Vector(- 0.016 * scaling_factor / 4, - 0.01728 * scaling_factor / 4);
-            var star2 = new StarTraced(r_st, v_st, 1000, 2);
+            var star2 = new StarTraced(r_st, v_st, 1000, 2, "star2");
             star2.trace.update_trace(r_st.get_coordinates());
 
             var r_st = new Vector( - 1 * scaling_factor + 2* center, 1 * center);
             var v_st = new Vector(- 0.016 * scaling_factor / 4, - 0.01728 * 3 * scaling_factor / 4);
-            var star3 = new StarTraced(r_st, v_st, 1000, 1);
+            var star3 = new StarTraced(r_st, v_st, 1000, 1, "star3");
             star3.trace.update_trace(r_st.get_coordinates());
 
             var objects_and_colors = inner_solar_system_setup(center, scaling_factor)
 
-            // !!!need to update after adding new object
-            var stars = [objects_and_colors[0][0], star1, star2];
-            var colors_stars = [objects_and_colors[1][0], "#F54927", "#27ADF5"];
-            var planets = objects_and_colors[0].slice(1);
-            var colors_planets = objects_and_colors[1].slice(1);
+            // const in a sense of checkbox changes
+            var stars_const = [objects_and_colors[0][0], star1, star2];
+            var colors_stars_const = [objects_and_colors[1][0], "#F54927", "#27ADF5"];
+            const planets_const = objects_and_colors[0].slice(1);
+            const colors_planets_const = objects_and_colors[1].slice(1);
+
+            // dummy values for checkbox-related changes
+            var stars = stars_const;
+            var colors_stars = colors_stars_const;
+            var planets = planets_const;
+            var colors_planets = colors_planets_const;
+
 
             const startButton = document.getElementById('animate');
             const stopButton = document.getElementById('stop');
             const resumeButton = document.getElementById('resume');
+            const container = document.getElementById('stars-container');
+
             let isRunning = false;
             let isStopped = false;
 
-            draw_setup(ctx, stars, colors_stars, planets, colors_planets);
+            draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+            buildStarCheckboxes(document, stars);
+            var deleteMenu = document.getElementById('delete-star-menu');
+            updateDeleteMenu(deleteMenu, document, stars);
+
 
             function animate() {
                 if (!isRunning) return;
@@ -76,6 +89,12 @@
                     isRunning = true;
                     animate();
                     startButton.disabled = true;
+                    document.querySelectorAll('input[name="planet"]').forEach(box => {
+                        box.disabled = true;
+                    });
+                    document.querySelectorAll('input[name="star"]').forEach(cb => {
+                        cb.disabled = true;
+                    });
                 }
             })
 
@@ -87,6 +106,38 @@
                 isStopped = false;
                 animate();
             })
+
+            document.querySelectorAll('input[name="planet"]').forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    // we shall give star info that considers star checkbox (e.g. dummy stars)
+                    [planets, colors_planets] = getCheckboxInfo(document, ctx, center, stars, colors_stars, planets_const, colors_planets_const);
+
+                });
+            });
+
+            document.querySelectorAll('input[name="star"]').forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    // we shall give planet info that considers planet checkbox (e.g. dummy planets)
+                    [stars, colors_stars] = getCheckboxStarInfo(document, ctx, center, stars_const, colors_stars_const, planets, colors_planets);
+
+                });
+            });
+            deleteMenu.addEventListener('change', (event) => {
+                const starName = event.target.value;
+
+
+                colors_stars_const = colors_stars_const.filter((_, i) => stars_const[i].name !== starName);
+                stars_const = stars_const.filter(star => star.name !== starName);
+                colors_stars = colors_stars.filter((_, i) => stars[i].name !== starName);
+                stars = stars.filter(star => star.name !== starName);
+
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+                updateDeleteMenu(deleteMenu, document, stars);
+                buildStarCheckboxes(document, stars_const);
+            });
+
+
+
 
         </script>
     </div>
