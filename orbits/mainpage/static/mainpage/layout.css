@@ -23,12 +23,14 @@ body {
     padding: 20px;
     box-sizing: border-box;
     background-color: #B1DDF1;
+    gap: 20px; /* General gap between top and bottom blocks */
 }
 
 .control_buttons{
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 5px; /* Tight spacing for Start/Stop buttons */
+    align-tems: bottom;
 }
 
 .fieldset{
@@ -54,4 +56,30 @@ body {
     display: flex;
     gap: 20px;
     flex-direction: row;
+}
+
+.deleting{
+    vertical-align: text-top;
+    width: 200px;
+}
+
+/* Контейнер кнопки */
+.button_create {
+    flex: 0 0 auto;         /* Не дає контейнеру розтягуватися */
+}
+
+.row2 {
+    display: flex;
+    flex-direction: row;
+    align-items: center; /* Вирівнює кнопку та меню по одній лінії */
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.menu_create {
+    display: block;
+}
+
+.hidden {
+    display: none;
 }

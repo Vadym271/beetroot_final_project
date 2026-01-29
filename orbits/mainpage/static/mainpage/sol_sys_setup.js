@@ -43,6 +43,23 @@ export function draw_setup(ctx, half_width, stars, colors_stars, planets, colors
         ctx.arc(object.get_position()[0], object.get_position()[1], 3, 0, Math.PI * 2);
         ctx.fill();
         ctx.closePath();
+        if (object.trace.length !== 0){
+            ctx.beginPath();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = colors_planets[i];
+
+            const trace = planets[i].trace.trace;
+            ctx.moveTo(trace[0][0], trace[0][1]);
+
+            for (let j = 1; j < trace.length; j++) {
+                ctx.lineTo(trace[j][0], trace[j][1]);
+            }
+
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        drawArrow(ctx, object, colors_planets[i]);
     });
 
     stars.forEach((object, i) => {
@@ -51,5 +68,65 @@ export function draw_setup(ctx, half_width, stars, colors_stars, planets, colors
         ctx.arc(object.get_position()[0], object.get_position()[1], 7, 0, Math.PI * 2);
         ctx.fill();
         ctx.closePath();
+
+        if (object.trace.length !== 0){
+            ctx.beginPath();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = colors_stars[i];
+
+            const trace = stars[i].trace.trace;
+            ctx.moveTo(trace[0][0], trace[0][1]);
+
+            for (let j = 1; j < trace.length; j++) {
+                ctx.lineTo(trace[j][0], trace[j][1]);
+            }
+
+            ctx.stroke();
+            ctx.closePath();
+        }
+        drawArrow(ctx, object, colors_stars[i]);
     });
+}
+
+function drawArrow(ctx, star, color){
+    if (star.get_vel_vector().module() === 0){
+        return
+    }
+    let fromx, fromy, tox, toy;
+    [fromx, fromy] = star.get_position();
+    [tox, toy] = star.get_pos_vector().add(star.get_vel_vector().mul(100)).get_coordinates();
+    var headlen = 10;
+    var angle = Math.atan2(toy-fromy,tox-fromx);
+
+    ctx.save();
+    ctx.strokeStyle = color;
+
+    //starting path of the arrow from the start square to the end square
+    //and drawing the stroke
+    ctx.beginPath();
+    ctx.moveTo(fromx, fromy);
+    ctx.lineTo(tox, toy);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    //starting a new path from the head of the arrow to one of the sides of
+    //the point
+    ctx.beginPath();
+    ctx.moveTo(tox, toy);
+    ctx.lineTo(tox-headlen*Math.cos(angle-Math.PI/7),
+               toy-headlen*Math.sin(angle-Math.PI/7));
+
+    //path from the side point of the arrow, to the other side point
+    ctx.lineTo(tox-headlen*Math.cos(angle+Math.PI/7),
+               toy-headlen*Math.sin(angle+Math.PI/7));
+
+    //path from the side point back to the tip of the arrow, and then
+    //again to the opposite side point
+    ctx.lineTo(tox, toy);
+    ctx.lineTo(tox-headlen*Math.cos(angle-Math.PI/7),
+               toy-headlen*Math.sin(angle-Math.PI/7));
+
+    //draws the paths created above
+    ctx.stroke();
+    ctx.restore();
 }

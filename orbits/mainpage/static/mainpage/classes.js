@@ -40,6 +40,7 @@ export class Vector {
         return new Vector(this.x / mag, this.y / mag);
     }
 }
+
 class Trace{
     constructor(limit){
         this.trace = [];
@@ -96,6 +97,19 @@ export class CelestialBodyTraced extends CelestialBody{
         this.position = this.position.add(this.velocity.mul(dt));
         this.trace.update_trace(this.get_position());
     }
+
+    clone() {
+        const temp = new CelestialBodyTraced(this.position, this.velocity, this.limit);
+        temp.trace = this.trace;
+        return temp
+    }
+
+    clear_trace(){
+        this.trace.trace = [];
+        this.trace.length = 0;
+    }
+
+
 }
 
 export class StarTraced extends CelestialBodyTraced{
@@ -105,6 +119,17 @@ export class StarTraced extends CelestialBodyTraced{
         this.mass = mass
         this.name = name
     }
+    clone() {
+        const temp = new StarTraced(this.position, this.velocity, this.limit, this.mass, this.name);
+        temp.trace = this.trace;
+        return temp
+    }
+
+    clear_trace(){
+        this.trace.trace = [];
+        this.trace.length = 0;
+    }
+
 }
 
 export function sun_force(r1, r2, sc_fac) {

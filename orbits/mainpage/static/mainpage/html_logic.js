@@ -59,3 +59,17 @@ export function deleteStar(deleteMenu, stars_const, colors_stars_const, stars, c
         return [const_stars, colors_stars_const, stars, colors_stars]
     });
 }
+
+export function all_checkboxes_info(document, ctx, half_w, stars, colors_stars, planets, colors_planets) {
+    const allPlanetsBoxes = document.querySelectorAll("input[name='planet']");
+    const states_planets = Array.from(allPlanetsBoxes).map(box => box.checked);
+    planets = planets.filter((_, i) => states_planets[i] === true);
+    colors_planets = colors_planets.filter((_, i) => states_planets[i] === true);
+
+    const allBoxes = document.querySelectorAll("input[name='star']");
+    const states = Array.from(allBoxes).map(box => box.checked);
+    stars = stars.filter((_, i) => states[i] === true);
+    colors_stars = colors_stars.filter((_, i) => states[i] === true);
+
+    return [planets, colors_planets, stars, colors_stars]
+}

@@ -19,18 +19,35 @@
         <div id="stars-container" class="checkbox-row"></div>
     </fieldset>
 
+    <div class="deleting">
+        <label for="delete-star-menu">Delete star:</label>
+        <select id="delete-star-menu" class="form-select">
+            <option value="" selected disabled>Choose a star...</option>
+            </select>
+    </div>
 </div>
 
-<div class="control-item">
-    <label for="delete-star-menu">Delete star:</label>
-    <select id="delete-star-menu" class="form-select">
-        <option value="" selected disabled>Choose a star...</option>
-        </select>
+<div class="row2">
+    <div class="button_create">
+        <button id="create" type="button" class="btn btn-primary btn-lg">Create new star</button>
+    </div>
+
+    <div id="create_options" class="hidden">
+        <button id="left" type="button" class="btn btn-outline-primary"> &#8592 </button>
+        <button id="right" type="button" class="btn btn-outline-primary"> &#8594 </button>
+        <button id="up" type="button" class="btn btn-outline-primary">&#8593</button>
+        <button id="down" type="button" class="btn btn-outline-primary">&#8595</button>
+
+        <button id="add-star" type="button" class="btn btn-primary"> Add star </button>
+
+    </div>
+
+
 </div>
 
 <div class="control_buttons">
     <button id="animate" type="button" class="btn btn-success">Start</button>
     <button id="stop" type="button" class="btn btn-warning">Stop</button>
     <button id="resume" type="button" class="btn btn-primary">Continue</button>
-    <button type="button" class="btn btn-danger" onclick="window.location.href='/'">Reset</button>
+    <button id="reset" type="button" class="btn btn-danger">Reset</button>
 </div>

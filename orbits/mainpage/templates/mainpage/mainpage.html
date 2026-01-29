@@ -20,7 +20,8 @@
             import { Vector, CelestialBodyTraced, StarTraced, sun_force } from "{% static 'mainpage/classes.js' %}";
             import { update_planets, update_stars } from "{% static 'mainpage/move_funcs.js' %}";
             import { inner_solar_system_setup, draw_setup } from "{% static 'mainpage/sol_sys_setup.js' %}";
-            import { getCheckboxInfo, buildStarCheckboxes, getCheckboxStarInfo, updateDeleteMenu } from "{% static 'mainpage/html_logic.js' %}";
+            import { getCheckboxInfo, buildStarCheckboxes, getCheckboxStarInfo, updateDeleteMenu, all_checkboxes_info } from "{% static 'mainpage/html_logic.js' %}";
+            import { create_star_html } from "{% static 'mainpage/create_update_stars.js' %}";
 
             const canvas = document.getElementById('circleCanvas');
             const ctx = canvas.getContext('2d');
@@ -28,15 +29,16 @@
             const center = canvas.width / 2;
             const scaling_factor = center / 12 * 2;
             const dt = 0.2;
+            const p_star_colors = ["#F5EE27", "#F54927", "#27ADF5", "#F5B027", "#2A27F5", "#C063EB", "#EB30F0", "#F20202", "#3BC210", "#911616"]
 
             // setup
             var r_st = new Vector(1 * scaling_factor + center, 0);
-            var v_st = new Vector(0.016 * scaling_factor / 4, 0.01728 * scaling_factor / 4);
+            var v_st = new Vector(0.016 * scaling_factor / 4, 0.01728 * scaling_factor);
             const star1 = new StarTraced(r_st, v_st, 1000, 2, "star1");
             star1.trace.update_trace(r_st.get_coordinates());
 
             var r_st = new Vector( - 1 * scaling_factor + 2* center, 2 * center);
-            var v_st = new Vector(- 0.016 * scaling_factor / 4, - 0.01728 * scaling_factor / 4);
+            var v_st = new Vector(- 0.016 * scaling_factor / 3, - 0.01728 * scaling_factor / 4);
             var star2 = new StarTraced(r_st, v_st, 1000, 2, "star2");
             star2.trace.update_trace(r_st.get_coordinates());
 
@@ -54,23 +56,34 @@
             const colors_planets_const = objects_and_colors[1].slice(1);
 
             // dummy values for checkbox-related changes
-            var stars = stars_const;
-            var colors_stars = colors_stars_const;
-            var planets = planets_const;
-            var colors_planets = colors_planets_const;
+            let stars = stars_const.map(item => item.clone());
+            let colors_stars = structuredClone(colors_stars_const);
+            let planets = planets_const.map(item => item.clone());
+            let colors_planets = structuredClone(colors_planets_const);
 
 
             const startButton = document.getElementById('animate');
             const stopButton = document.getElementById('stop');
             const resumeButton = document.getElementById('resume');
-            const container = document.getElementById('stars-container');
+            const createButton = document.getElementById('create');
+            const containerStar = document.getElementById('stars-container');
+            const addStarButton = document.getElementById('add-star');
+            const resetButton = document.getElementById('reset');
+
+            const leftButton = document.getElementById('left');
+            const rightButton = document.getElementById('right');
+            const upButton = document.getElementById('up');
+            const downButton = document.getElementById('down');
+
+            var deleteMenu = document.getElementById('delete-star-menu');
+
 
             let isRunning = false;
             let isStopped = false;
 
+            console.log(stars);
             draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
             buildStarCheckboxes(document, stars);
-            var deleteMenu = document.getElementById('delete-star-menu');
             updateDeleteMenu(deleteMenu, document, stars);
 
 
@@ -80,6 +93,7 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 [stars, colors_stars] = update_stars(ctx, stars, colors_stars, scaling_factor, dt);
                 [planets, colors_planets] = update_planets(ctx, planets, stars, colors_planets, scaling_factor, dt);
+                console.log(stars_const[1].position);
                 requestAnimationFrame(animate);
             }
 
@@ -88,53 +102,162 @@
                 if (!isRunning) {
                     isRunning = true;
                     animate();
-                    startButton.disabled = true;
-                    document.querySelectorAll('input[name="planet"]').forEach(box => {
-                        box.disabled = true;
-                    });
-                    document.querySelectorAll('input[name="star"]').forEach(cb => {
-                        cb.disabled = true;
-                    });
-                }
-            })
+                    disable_for_start();
+                };
+            });
 
             stopButton.addEventListener('click', () => {
                 isStopped = true;
-            })
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+            });
 
             resumeButton.addEventListener('click', () => {
                 isStopped = false;
                 animate();
-            })
+            });
+
+            resetButton.addEventListener('click', () => {
+                isRunning = false;
+                isStopped = false;
+                // Створюємо НОВІ екземпляри об'єктів при скиданні
+                let clean_stars = stars_const.map(item => item.clone());
+                let clean_planets = planets_const.map(item => item.clone());
+
+                [planets, colors_planets, stars, colors_stars] = all_checkboxes_info(
+                    document, ctx, center, clean_stars, colors_stars_const, clean_planets, colors_planets_const
+                );
+                stars.forEach(star => {
+                    star.clear_trace();
+                });
+
+                planets.forEach(planet => {
+                    planet.clear_trace();
+                });
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+                enable_for_addStar();
+            });
+
+            createButton.addEventListener('click', () => {
+                disable_for_start();
+                stopButton.disabled = true;
+                resumeButton.disabled = true;
+
+                const content = document.getElementById('create_options');
+                content.classList.toggle('menu_create');
+                content.classList.toggle('hidden');
+
+                let new_star, new_color;
+                [new_star, new_color] = create_star_html(center, scaling_factor);
+                stars_const.push(new_star);
+                colors_stars_const.push(new_color);
+                stars.push(new_star);
+                colors_stars.push(new_color);
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+
+                adjust_position();
+
+                addStarButton.addEventListener('click', () => {
+                    const stars_copy = stars_const.map(p => p.clone());
+                    let colors_stars_copy = structuredClone(colors_stars_const);
+
+                    buildStarCheckboxes(document, stars_copy);
+
+
+                    [stars, colors_stars] = getCheckboxStarInfo(document, ctx, center, stars_copy, colors_stars_copy, planets, colors_planets);
+
+                    updateDeleteMenu(deleteMenu, document, stars);
+
+                    enable_for_addStar();
+                    content.classList.toggle('hidden');
+                    content.classList.toggle('menu_create');
+
+                });
+            });
 
             document.querySelectorAll('input[name="planet"]').forEach(checkbox => {
                 checkbox.addEventListener('change', () => {
                     // we shall give star info that considers star checkbox (e.g. dummy stars)
-                    [planets, colors_planets] = getCheckboxInfo(document, ctx, center, stars, colors_stars, planets_const, colors_planets_const);
+                    const planets_copy = planets_const.map(p => p.clone());
+                    let colors_planets_copy = structuredClone(colors_planets_const);
+                    [planets, colors_planets] = getCheckboxInfo(document, ctx, center, stars, colors_stars, planets_copy, colors_planets_copy);
 
                 });
             });
 
-            document.querySelectorAll('input[name="star"]').forEach(checkbox => {
-                checkbox.addEventListener('change', () => {
-                    // we shall give planet info that considers planet checkbox (e.g. dummy planets)
-                    [stars, colors_stars] = getCheckboxStarInfo(document, ctx, center, stars_const, colors_stars_const, planets, colors_planets);
+           containerStar.addEventListener('change', (event) => {
+                // we shall give planet info that considers planet checkbox (e.g. dummy planets)
+               const stars_copy = stars_const.map(p => p.clone());
+               let colors_stars_copy = structuredClone(colors_stars_const);
 
-                });
+                [stars, colors_stars] = getCheckboxStarInfo(document, ctx, center, stars_copy, colors_stars_copy, planets, colors_planets);
             });
+
             deleteMenu.addEventListener('change', (event) => {
-                const starName = event.target.value;
-
+                var starName = event.target.value;
 
                 colors_stars_const = colors_stars_const.filter((_, i) => stars_const[i].name !== starName);
                 stars_const = stars_const.filter(star => star.name !== starName);
                 colors_stars = colors_stars.filter((_, i) => stars[i].name !== starName);
                 stars = stars.filter(star => star.name !== starName);
 
+
                 draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
                 updateDeleteMenu(deleteMenu, document, stars);
                 buildStarCheckboxes(document, stars_const);
+
             });
+
+
+
+
+
+            // helper functions
+            function disable_for_start(){
+                startButton.disabled = true;
+                createButton.disabled = true;
+                deleteMenu.disabled = true;
+                document.querySelectorAll('input[name="planet"]').forEach(box => {
+                    box.disabled = true;
+                });
+                document.querySelectorAll('input[name="star"]').forEach(cb => {
+                    cb.disabled = true;
+                });
+            }
+
+            function enable_for_addStar(){
+                startButton.disabled = false;
+                createButton.disabled = false;
+                deleteMenu.disabled = false;
+                document.querySelectorAll('input[name="planet"]').forEach(box => {
+                    box.disabled = false;
+                });
+                document.querySelectorAll('input[name="star"]').forEach(cb => {
+                    cb.disabled = false;
+                });
+
+                stopButton.disabled = false;
+                resumeButton.disabled = false;
+            }
+
+            function adjust_position() {
+                leftButton.addEventListener('click', () => {
+                    stars_const.at(-1).position.x = stars_const.at(-1).position.x - 5;
+                    draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+                });
+                rightButton.addEventListener('click', () => {
+                    stars_const.at(-1).position.x = stars_const.at(-1).position.x + 5;
+                    draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+                });
+                upButton.addEventListener('click', () => {
+                    stars_const.at(-1).position.y = stars_const.at(-1).position.y - 5;
+                    draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+                });
+                downButton.addEventListener('click', () => {
+                    stars_const.at(-1).position.y = stars_const.at(-1).position.y + 5;
+                    draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+                });
+
+            }
 
 
 

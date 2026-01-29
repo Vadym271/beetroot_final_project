@@ -69,11 +69,27 @@ export function update_stars(ctx, stars, colors, scaling_factor, dt){
         })
     }
     else {
+        stars[0].upd_pos(dt);
         ctx.beginPath();
         ctx.fillStyle = colors[0];
         ctx.arc(stars[0].get_position()[0], stars[0].get_position()[1], 7, 0, Math.PI * 2);
         ctx.fill();
         ctx.closePath();
+
+        ctx.beginPath();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = colors[0];
+
+        const trace = stars[0].trace.trace;
+        ctx.moveTo(trace[0][0], trace[0][1]);
+
+        for (let j = 1; j < trace.length; j++) {
+            ctx.lineTo(trace[j][0], trace[j][1]);
+        }
+
+        ctx.stroke();
+        ctx.closePath();
+
     }
     return [stars, colors]
 }
