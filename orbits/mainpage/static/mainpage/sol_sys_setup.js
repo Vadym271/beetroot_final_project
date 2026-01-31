@@ -88,7 +88,7 @@ export function draw_setup(ctx, half_width, stars, colors_stars, planets, colors
     });
 }
 
-function drawArrow(ctx, star, color){
+export function drawArrow(ctx, star, color){
     if (star.get_vel_vector().module() === 0){
         return
     }

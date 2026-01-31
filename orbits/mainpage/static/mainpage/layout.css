@@ -75,11 +75,39 @@ body {
     gap: 15px;
     margin-bottom: 20px;
 }
+#create_options {
+    display: flex;             /* Вмикаємо Flexbox */
+    flex-direction: row;       /* Розміщуємо контент горизонтально */
+    flex-wrap: wrap;           /* Дозволяємо перенос, якщо місця мало */
+    gap: 20px;                 /* Відступ між колонками */
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    max-width: 500px;          /* Обмежуємо ширину, щоб воно не розтягувалося на весь екран */
+}
 
-.menu_create {
-    display: block;
+/* Контейнер для всіх форм (ліва частина) */
+#create_options form {
+    flex: 1;                   /* Форми займають основну частину зліва */
+    min-width: 200px;
+}
+
+/* Групуємо кнопки (права частина) */
+.controls-group {
+    display: flex;
+    flex-direction: column;    /* Кнопки всередині групи йдуть стовпчиком */
+    gap: 10px;
+    justify-content: center;   /* Центруємо кнопки по висоті */
+}
+
+/* Стиль для сітки кнопок зі стрілками */
+.arrow-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }

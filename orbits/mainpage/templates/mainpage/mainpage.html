@@ -19,7 +19,7 @@
         <script type="module">
             import { Vector, CelestialBodyTraced, StarTraced, sun_force } from "{% static 'mainpage/classes.js' %}";
             import { update_planets, update_stars } from "{% static 'mainpage/move_funcs.js' %}";
-            import { inner_solar_system_setup, draw_setup } from "{% static 'mainpage/sol_sys_setup.js' %}";
+            import { inner_solar_system_setup, draw_setup, drawArrow } from "{% static 'mainpage/sol_sys_setup.js' %}";
             import { getCheckboxInfo, buildStarCheckboxes, getCheckboxStarInfo, updateDeleteMenu, all_checkboxes_info } from "{% static 'mainpage/html_logic.js' %}";
             import { create_star_html } from "{% static 'mainpage/create_update_stars.js' %}";
 
@@ -30,31 +30,20 @@
             const scaling_factor = center / 12 * 2;
             const dt = 0.2;
             const p_star_colors = ["#F5EE27", "#F54927", "#27ADF5", "#F5B027", "#2A27F5", "#C063EB", "#EB30F0", "#F20202", "#3BC210", "#911616"]
-
-            // setup
-            var r_st = new Vector(1 * scaling_factor + center, 0);
-            var v_st = new Vector(0.016 * scaling_factor / 4, 0.01728 * scaling_factor);
-            const star1 = new StarTraced(r_st, v_st, 1000, 2, "star1");
-            star1.trace.update_trace(r_st.get_coordinates());
-
-            var r_st = new Vector( - 1 * scaling_factor + 2* center, 2 * center);
-            var v_st = new Vector(- 0.016 * scaling_factor / 3, - 0.01728 * scaling_factor / 4);
-            var star2 = new StarTraced(r_st, v_st, 1000, 2, "star2");
-            star2.trace.update_trace(r_st.get_coordinates());
-
-            var r_st = new Vector( - 1 * scaling_factor + 2* center, 1 * center);
-            var v_st = new Vector(- 0.016 * scaling_factor / 4, - 0.01728 * 3 * scaling_factor / 4);
-            var star3 = new StarTraced(r_st, v_st, 1000, 1, "star3");
-            star3.trace.update_trace(r_st.get_coordinates());
+            let phi = 0;
+            let i = 0;
+            const k = 0.000576 // 1 km/s = 0.000576 AU/day
 
             var objects_and_colors = inner_solar_system_setup(center, scaling_factor)
 
             // const in a sense of checkbox changes
-            var stars_const = [objects_and_colors[0][0], star1, star2];
-            var colors_stars_const = [objects_and_colors[1][0], "#F54927", "#27ADF5"];
+            var stars_const = [objects_and_colors[0][0]];
+            var colors_stars_const = [objects_and_colors[1][0]];
             const planets_const = objects_and_colors[0].slice(1);
             const colors_planets_const = objects_and_colors[1].slice(1);
 
+            let stars_const2 = stars_const.map(p => p.clone());
+            let colors_stars_const2 = structuredClone(colors_stars_const);
             // dummy values for checkbox-related changes
             let stars = stars_const.map(item => item.clone());
             let colors_stars = structuredClone(colors_stars_const);
@@ -69,22 +58,33 @@
             const containerStar = document.getElementById('stars-container');
             const addStarButton = document.getElementById('add-star');
             const resetButton = document.getElementById('reset');
+            const cancelButton = document.getElementById('cancel');
 
             const leftButton = document.getElementById('left');
             const rightButton = document.getElementById('right');
             const upButton = document.getElementById('up');
             const downButton = document.getElementById('down');
+            const cwButton = document.getElementById('cw');
+            const counter_cwButton = document.getElementById('counter_cw');
+            const colorButton = document.getElementById('color_change');
+
+
+            const nameForm = document.getElementById('new_star_name');
+            const velForm = document.getElementById('new_star_vel');
+            const massForm = document.getElementById('new_star_mass');
+
 
             var deleteMenu = document.getElementById('delete-star-menu');
-
+            var updateMenu = document.getElementById('update-star-menu');
 
             let isRunning = false;
             let isStopped = false;
 
-            console.log(stars);
             draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
             buildStarCheckboxes(document, stars);
             updateDeleteMenu(deleteMenu, document, stars);
+            updateDeleteMenu(updateMenu, document, stars);
+
 
 
             function animate() {
@@ -93,7 +93,6 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 [stars, colors_stars] = update_stars(ctx, stars, colors_stars, scaling_factor, dt);
                 [planets, colors_planets] = update_planets(ctx, planets, stars, colors_planets, scaling_factor, dt);
-                console.log(stars_const[1].position);
                 requestAnimationFrame(animate);
             }
 
@@ -137,41 +136,54 @@
                 enable_for_addStar();
             });
 
+            let new_star, new_color;
+            const contents = document.getElementById('create_options');
+            var speed;
+
             createButton.addEventListener('click', () => {
+                velForm.style.border = "2px solid black";
+                nameForm.style.border = "2px solid black";
+
+                stars_const2 = stars_const.map(p => p.clone());
+                colors_stars_const2 = structuredClone(colors_stars_const);
+
                 disable_for_start();
                 stopButton.disabled = true;
                 resumeButton.disabled = true;
+                resetButton.disabled = true;
 
-                const content = document.getElementById('create_options');
-                content.classList.toggle('menu_create');
-                content.classList.toggle('hidden');
 
-                let new_star, new_color;
                 [new_star, new_color] = create_star_html(center, scaling_factor);
-                stars_const.push(new_star);
-                colors_stars_const.push(new_color);
+                stars_const2.push(new_star);
+                colors_stars_const2.push(new_color);
                 stars.push(new_star);
                 colors_stars.push(new_color);
+
                 draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
 
                 adjust_position();
 
-                addStarButton.addEventListener('click', () => {
-                    const stars_copy = stars_const.map(p => p.clone());
-                    let colors_stars_copy = structuredClone(colors_stars_const);
 
-                    buildStarCheckboxes(document, stars_copy);
+                velForm.removeEventListener('change', velChange);
+                velForm.addEventListener('change', velChange);
 
+                cwButton.removeEventListener('click', cwButtonF);
+                cwButton.addEventListener('click', cwButtonF);
 
-                    [stars, colors_stars] = getCheckboxStarInfo(document, ctx, center, stars_copy, colors_stars_copy, planets, colors_planets);
+                counter_cwButton.removeEventListener('click', counter_cwButtonF);
+                counter_cwButton.addEventListener('click', counter_cwButtonF);
 
-                    updateDeleteMenu(deleteMenu, document, stars);
+                colorButton.removeEventListener('click', colorButtonF);
+                colorButton.addEventListener('click', colorButtonF);
 
-                    enable_for_addStar();
-                    content.classList.toggle('hidden');
-                    content.classList.toggle('menu_create');
+                contents.classList.remove('hidden');
 
-                });
+                cancelButton.removeEventListener('click', cancelCreate);
+                cancelButton.addEventListener('click', cancelCreate);
+
+                addStarButton.removeEventListener('click', addStarF);
+                addStarButton.addEventListener('click', addStarF);
+
             });
 
             document.querySelectorAll('input[name="planet"]').forEach(checkbox => {
@@ -201,12 +213,86 @@
                 stars = stars.filter(star => star.name !== starName);
 
 
-                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
-                updateDeleteMenu(deleteMenu, document, stars);
+                draw_setup(ctx, center, stars_const, colors_stars_const, planets, colors_planets);
+                updateDeleteMenu(deleteMenu, document, stars_const);
+                updateDeleteMenu(updateMenu, document, stars_const);
                 buildStarCheckboxes(document, stars_const);
 
             });
 
+
+
+           updateMenu.addEventListener('change', (event) => {
+
+                stars_const2 = stars_const.map(p => p.clone());
+                colors_stars_const2 = structuredClone(colors_stars_const);
+
+                velForm.style.border = "2px solid black";
+                nameForm.style.border = "2px solid black";
+
+                disable_for_start();
+                createButton.disabled = true;
+                stopButton.disabled = true;
+                resumeButton.disabled = true;
+                resetButton.disabled = true;
+
+                console.log(stars.length, stars_const.length);
+
+                var star_name = event.target.value;
+                new_star = stars_const2.filter((star, index) => star.name === star_name)[0];
+                new_color = colors_stars_const2.filter((_, index) => stars_const2[index].name === star_name)[0];
+
+                document.getElementById('new_star_name').value = new_star.name;
+                document.getElementById('new_star_mass').value = new_star.mass;
+
+                speed = new_star.velocity.module() / k / scaling_factor;
+                if (speed === 0){
+                    phi = 0;
+                } else {
+                    phi = Math.acos(new_star.velocity.x / speed);
+                }
+                document.getElementById('new_star_vel').value = speed;
+
+                console.log(stars, stars_const2);
+                colors_stars_const2 = colors_stars_const2.filter((_, index) => stars_const2[index].name !== star_name);
+                stars = stars.filter((_, index) => stars_const2[index].name !== star_name);
+                colors_stars = colors_stars.filter((_, index) => stars_const2[index].name !== star_name);
+                stars_const2 = stars_const2.filter((_, index) => stars_const2[index].name !== star_name);
+
+                console.log(stars.length, stars_const.length);
+
+                stars_const2.push(new_star);
+                colors_stars_const2.push(new_color);
+                stars.push(new_star);
+                colors_stars.push(new_color);
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+
+                adjust_position();
+                console.log(stars.length, stars_const2.length);
+
+                velForm.removeEventListener('change', velChange);
+                velForm.addEventListener('change', velChange);
+
+                cwButton.removeEventListener('click', cwButtonF);
+                cwButton.addEventListener('click', cwButtonF);
+
+                counter_cwButton.removeEventListener('click', counter_cwButtonF);
+                counter_cwButton.addEventListener('click', counter_cwButtonF);
+
+                colorButton.removeEventListener('click', colorButtonF);
+                colorButton.addEventListener('click', colorButtonF);
+
+                const contents = document.getElementById('create_options');
+                contents.classList.remove('hidden');
+
+                cancelButton.removeEventListener('click', cancelButtonUpdF);
+                cancelButton.addEventListener('click', cancelButtonUpdF);
+
+                addStarButton.removeEventListener('click', updStar);
+                addStarButton.addEventListener('click', updStar);
+
+
+           });
 
 
 
@@ -216,6 +302,7 @@
                 startButton.disabled = true;
                 createButton.disabled = true;
                 deleteMenu.disabled = true;
+                updateMenu.disabled = true;
                 document.querySelectorAll('input[name="planet"]').forEach(box => {
                     box.disabled = true;
                 });
@@ -228,6 +315,7 @@
                 startButton.disabled = false;
                 createButton.disabled = false;
                 deleteMenu.disabled = false;
+                updateMenu.disabled = false;
                 document.querySelectorAll('input[name="planet"]').forEach(box => {
                     box.disabled = false;
                 });
@@ -240,27 +328,200 @@
             }
 
             function adjust_position() {
-                leftButton.addEventListener('click', () => {
-                    stars_const.at(-1).position.x = stars_const.at(-1).position.x - 5;
-                    draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
-                });
-                rightButton.addEventListener('click', () => {
-                    stars_const.at(-1).position.x = stars_const.at(-1).position.x + 5;
-                    draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
-                });
-                upButton.addEventListener('click', () => {
-                    stars_const.at(-1).position.y = stars_const.at(-1).position.y - 5;
-                    draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
-                });
-                downButton.addEventListener('click', () => {
-                    stars_const.at(-1).position.y = stars_const.at(-1).position.y + 5;
-                    draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
-                });
+                leftButton.removeEventListener('click', leftButtonF);
+                leftButton.addEventListener('click', leftButtonF);
 
+                rightButton.removeEventListener('click', rightButtonF);
+                rightButton.addEventListener('click', rightButtonF);
+
+                upButton.removeEventListener('click', upButtonF);
+                upButton.addEventListener('click', upButtonF);
+
+                downButton.removeEventListener('click', downButtonF);
+                downButton.addEventListener('click', downButtonF);
             }
 
+            const cancelCreate = () => {
+                contents.classList.add('hidden');
+                enable_for_addStar();
+                resetButton.disabled = false;
+                stars_const.pop();
+                colors_stars_const.pop();
+
+                 const stars_copy = stars_const2.map(p => p.clone());
+                 let colors_stars_copy = structuredClone(colors_stars_const2);
+
+                [stars, colors_stars] = getCheckboxStarInfo(document, ctx, center, stars_copy, colors_stars_copy, planets, colors_planets);
+                console.log(stars.length, stars_const2.length);
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+
+               stars_const = stars_const2.map(p => p.clone());
+               colors_stars_const = structuredClone(colors_stars_const2);
+            }
+
+            const velChange = () => {
+                var v1 = velForm.value * k * scaling_factor;
+                var vel1 = new Vector(v1 * Math.cos(phi), v1 * Math.sin(phi));
+                stars_const2.at(-1).velocity = vel1;
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+            }
+
+            const cwButtonF = () => {
+                var v = velForm.value * k * scaling_factor;
+                phi = phi + Math.PI / 36
+                var vel = new Vector(v * Math.cos(phi), v * Math.sin(phi));
+                new_star.velocity = vel;
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+            }
+
+            const counter_cwButtonF = () => {
+                var v = velForm.value * k * scaling_factor;
+                phi = phi - Math.PI / 36
+                var vel = new Vector(v * Math.cos(phi), v * Math.sin(phi));
+                new_star.velocity = vel;
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+            }
+
+            const colorButtonF = () => {
+                colors_stars_const2[colors_stars_const2.length - 1] = p_star_colors[i];
+                colors_stars[colors_stars.length - 1] = p_star_colors[i];
+
+                if (i !== p_star_colors.length){
+                    i = i + 1;
+                } else {
+                    i = 0;
+                }
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+            }
+
+            const leftButtonF = () => {
+                stars_const2.at(-1).position.x = stars_const2.at(-1).position.x - 5;
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+            }
+
+            const rightButtonF = () => {
+                stars_const2.at(-1).position.x = stars_const2.at(-1).position.x + 5;
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+            }
+
+            const upButtonF = () => {
+                stars_const2.at(-1).position.y = stars_const2.at(-1).position.y - 5;
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+            }
+
+            const downButtonF = () => {
+                stars_const2.at(-1).position.y = stars_const2.at(-1).position.y + 5;
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+            }
+
+            const cancelButtonUpdF = () => {
+                contents.classList.add('hidden');
+                enable_for_addStar();
+
+                draw_setup(ctx, center, stars, colors_stars, planets, colors_planets);
+                updateDeleteMenu(updateMenu, document, stars);
+
+                resetButton.disabled = false;
+                resumeButton.disabled = false;
+
+               stars_const = stars_const2.map(p => p.clone());
+               colors_stars_const = structuredClone(colors_stars_const2);
+            }
+
+            const updStar = () => {
+                const name_new_star = nameForm.value;
+                const vel_new_star = velForm.value;
+                const mass_new_star = massForm.value;
+
+                if (!name_new_star.trim()) {
+                    nameForm.style.border = "2px solid red";
+                    return;
+                }
+
+                if (!mass_new_star.trim()) {
+                    massForm.style.border = "2px solid red";
+                    nameForm.style.border = "2px solid black";
+                    return;
+                }
+
+                if (isNaN(Number(mass_new_star.trim()))) {
+                    alert("Mass must be a number");
+                    return;
+                }
+
+                if (Number(mass_new_star.trim()) > 5) {
+                    alert("Mass is too big, simulation won't work correctly");
+                    return;
+                }
+
+                stars_const.at(-1).name = name_new_star;
+                stars_const.at(-1).mass = Number(mass_new_star);
+                const stars_copy = stars_const2.map(p => p.clone());
+                let colors_stars_copy = structuredClone(colors_stars_const2);
+
+                buildStarCheckboxes(document, stars_copy);
+                updateDeleteMenu(updateMenu, document, stars);
+                updateDeleteMenu(deleteMenu, document, stars);
 
 
+                [stars, colors_stars] = getCheckboxStarInfo(document, ctx, center, stars_copy, colors_stars_copy, planets, colors_planets);
+
+                enable_for_addStar();
+                contents.classList.add('hidden');
+                createButton.disabled = false;
+                resetButton.disabled = false;
+
+               stars_const = stars_const2.map(p => p.clone());
+               colors_stars_const = structuredClone(colors_stars_const2);
+            }
+
+            const addStarF = () => {
+                const name_new_star = nameForm.value;
+                const mass_new_star = massForm.value;
+
+                if (!name_new_star.trim()) {
+                    nameForm.style.border = "2px solid red";
+                    return;
+                }
+
+                if (!mass_new_star.trim()) {
+                    massForm.style.border = "2px solid red";
+                    nameForm.style.border = "2px solid black";
+                    return;
+                }
+
+                if (isNaN(Number(mass_new_star.trim()))) {
+                    alert("Mass must be a number");
+                    return;
+                }
+
+                if (Number(mass_new_star.trim()) > 5) {
+                    alert("Mass is too big, simulation won't work correctly");
+                    return;
+                }
+
+                stars_const2.at(-1).name = name_new_star;
+                stars_const2.at(-1).mass = Number(mass_new_star);
+
+                const stars_copy = stars_const2.map(p => p.clone());
+                let colors_stars_copy = structuredClone(colors_stars_const2);
+
+                buildStarCheckboxes(document, stars_copy);
+
+                updateDeleteMenu(deleteMenu, document, stars);
+                updateDeleteMenu(updateMenu, document, stars);
+
+                enable_for_addStar();
+                resetButton.disabled = false;
+                velForm.removeEventListener('change', addStarButton.addEventListener);
+                counter_cwButton.removeEventListener('click', addStarButton.addEventListener);
+                cwButton.removeEventListener('click', addStarButton.addEventListener);
+
+                contents.classList.add('hidden');
+
+               stars_const = stars_const2.map(p => p.clone());
+               colors_stars_const = structuredClone(colors_stars_const2);
+            }
 
         </script>
     </div>

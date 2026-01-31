@@ -119,7 +119,7 @@ function collision_stars(star1, star2, stars, colors){
     const indicesToRemove = [idx1, idx2];
     const new_star_color = colors[idx2];
 
-    const M = star1.mass + star2.mass
+    const M = Number(star1.mass) + Number(star2.mass)
     const p1 = star1.get_vel_vector().mul(star1.mass)
     const p2 = star2.get_vel_vector().mul(star2.mass)
     const v = p1.add(p2).div(M);

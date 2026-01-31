@@ -25,6 +25,13 @@
             <option value="" selected disabled>Choose a star...</option>
             </select>
     </div>
+
+    <div class="deleting">
+    <label for="update-star-menu">Update star:</label>
+    <select id="update-star-menu" class="form-select">
+        <option value="" selected disabled>Choose a star...</option>
+        </select>
+    </div>
 </div>
 
 <div class="row2">
@@ -33,14 +40,39 @@
     </div>
 
     <div id="create_options" class="hidden">
-        <button id="left" type="button" class="btn btn-outline-primary"> &#8592 </button>
-        <button id="right" type="button" class="btn btn-outline-primary"> &#8594 </button>
-        <button id="up" type="button" class="btn btn-outline-primary">&#8593</button>
-        <button id="down" type="button" class="btn btn-outline-primary">&#8595</button>
+    <form id="star-form">
+      <div class="mb-2">
+        <label for="new_star_name" class="form-label">Star name</label>
+        <input type="text" class="form-control" id="new_star_name" required>
+      </div>
+      <div class="mb-2">
+        <label for="new_star_vel" class="form-label">Star velocity (km/s)</label>
+        <input type="text" class="form-control" id="new_star_vel">
+      </div>
+      <div class="mb-2">
+        <label for="new_star_mass" class="form-label">Star mass (solar masses)</label>
+        <input type="text" class="form-control" id="new_star_mass">
+      </div>
+    </form>
 
-        <button id="add-star" type="button" class="btn btn-primary"> Add star </button>
+    <div class="controls-group">
+        <div class="arrow-grid">
+            <button id="left" class="btn btn-outline-primary"> ← </button>
+            <button id="right" class="btn btn-outline-primary"> → </button>
+            <button id="up" class="btn btn-outline-primary"> ↑ </button>
+            <button id="down" class="btn btn-outline-primary"> ↓ </button>
+        </div>
 
+        <div class="arrow-grid">
+            <button id="counter_cw" class="btn btn-outline-primary"> ↺ </button>
+            <button id="cw" class="btn btn-outline-primary"> ↻ </button>
+        </div>
+
+        <button id="add-star" class="btn btn-primary">Add star</button>
+        <button id="color_change" class="btn btn-outline-primary">Change color</button>
+        <button id="cancel" class="btn btn-danger">Cancel</button>
     </div>
+</div>
 
 
 </div>
